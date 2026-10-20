@@ -69,7 +69,7 @@ def main() -> None:
         if motivo:  # confirma antes de alarmar: falhas de segundos são comuns
             time.sleep(30)
             motivo = testar(alvo)
-        atual = estado.get(nome, {"status": "ok"})
+        atual = estado.setdefault(nome, {"status": "ok"})  # registra o site desde a 1ª rodada (o painel lê daqui)
         print(f"{nome}: {'OK' if not motivo else 'FORA'}")
 
         if motivo and atual["status"] == "ok":
