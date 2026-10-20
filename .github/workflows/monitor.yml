@@ -1,0 +1,41 @@
+name: Monitor 24h
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # o GitHub pode atrasar alguns minutos em horários de pico
+  workflow_dispatch:
+    inputs:
+      teste:
+        description: "Só enviar uma mensagem de teste no Telegram"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  checar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar sites
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 checar.py ${{ inputs.teste && '--teste' || '' }}
+
+      - name: Gravar estado
+        run: |
+          if [ -n "$(git status --porcelain estado.json)" ]; then
+            git config user.name "jarvis-monitor"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add estado.json
+            git commit -m "estado: $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi
